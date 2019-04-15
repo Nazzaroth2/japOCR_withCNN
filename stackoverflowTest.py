@@ -1,10 +1,10 @@
 import win32gui, win32ui, win32con, win32api
 
-game = win32gui.FindWindow(None, "アールココ-片翼の愛玩姫-2.0")
+game = win32gui.FindWindow(None, "Mozilla Firefox")
 taskWindowValues = win32gui.GetWindowRect(game)
 offset = 10
 taskX = taskWindowValues[0] + offset
-taskY = taskWindowValues[1] + offset
+taskY = taskWindowValues[1]
 taskW = taskWindowValues[2] - taskX - offset
 taskH = taskWindowValues[3] - taskY - offset
 

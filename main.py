@@ -5,7 +5,7 @@ last edit: 08-04-19
 desc: main file for the project. starts up the program
 """
 
-import imageInputLib as imgLib
+from lib import imageInputLib as imgLib
 
 tensor = imgLib.convertRawToTensor()
 

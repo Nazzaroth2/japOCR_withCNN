@@ -1,0 +1,28 @@
+System Setup:
+Großes ScanNetz (256+ X 256+) gehen durchs Bild,
+können nur grob abschötzen ob überhaupt Zeichen in diesem Bereich sind.
+Wenn Schwellenwert überschritten wird (noch festzulegen) wird dieser
+Bereich von einem kleinen AnalyseNetz (z.B. 16 X 16) inspiziert und gefundene Zeichen
+klassifiziert und abgespeichert.
+
+
+Arbeitsschritte für Meilenstein 2:
+- Funktionen um von Unicode zu pixel-Bild zu kommen (am besten als Generator-Klasse)
+(ERLEDIGT)
+ABER: manche obsolete Charactere z.b. katakana wa'' (generator position 170 for first loop)
+sind nicht vorhanden und werden als nur weißer Hintergrund gezeichnet.
+    -füge if aussortierung zum Generator hinzu für obsolete chars?
+
+
+- Entscheiden und implementieren von Bildveränderungen (anschauen was in Spielen vorkommt)
+    (dies wird auch entscheiden ob online-Training überhaupt möglich ist, oder ob ich
+    Farbveränderungen besser mit anderem Program erledige)
+
+
+
+idea for finding words:
+the moment the nn finds a char and is confident about it, we break the analising process and
+start to analize once into horizontal space (if we find another char we can stop there and keep going
+horizontally, if no word is found this way we restart doing vertically) and if no char is found
+we start analizing into vertical space. then we mark the word we found to the space where we found it
+and also mark any space we already analized in the process so we dont reanalize them.

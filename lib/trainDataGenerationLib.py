@@ -9,6 +9,8 @@ desc: library for functions that deal with training data generation from
 from csv import reader
 from textwrap import wrap
 from PIL import Image, ImageFont, ImageDraw
+from torchvision import transforms
+from time import sleep
 
 class unicodeColorGenerator:
     def __init__(self,filepathUnicode,filepathColor):
@@ -16,16 +18,20 @@ class unicodeColorGenerator:
         self.colorSettings = self.__readColorCSV(filepathColor)
 
 
-    #TODO
-    #add exceptions for FileNotFoundError for both Unicode and Color read functions
-
     #desc: reads japanese Char Unicodes from file and stores in a list
     def __readUnicodeCSV(self,filepathUnicode):
         unicodeList = []
-        with open(filepathUnicode, 'r') as f:
-            fileReader = reader(f, delimiter=',')
-            for row in fileReader:
-                unicodeList.append(row[0])
+
+        try:
+            with open(filepathUnicode, 'r') as f:
+                fileReader = reader(f, delimiter=',')
+                for row in fileReader:
+                    unicodeList.append(row[0])
+        except FileNotFoundError:
+            print("You didn't give the right Unicode FilePath")
+            sleep(0.1)
+            raise
+
 
         return unicodeList
 
@@ -34,13 +40,21 @@ class unicodeColorGenerator:
     #list(backg-color=['XXX','XXX','XXX']; foreg-color=['#XXXXXX'])
     def __readColorCSV(self, filepathColor):
         colorSettings = []
-        with open(filepathColor, 'r') as f:
-            sep = '#'
-            fileReader = reader(f, delimiter=',')
-            for pos,row in enumerate(fileReader):
-                colorSettings.append(row[0].split(sep))
-                colorSettings[pos][0] = wrap(colorSettings[pos][0],3)
-                colorSettings[pos][1] = sep + colorSettings[pos][1]
+
+        try:
+            with open(filepathColor, 'r') as f:
+                sep = '#'
+                fileReader = reader(f, delimiter=',')
+                for pos,row in enumerate(fileReader):
+                    colorSettings.append(row[0].split(sep))
+                    #backgroundColor
+                    colorSettings[pos][0] = wrap(colorSettings[pos][0],3)
+                    #charColor
+                    colorSettings[pos][1] = sep + colorSettings[pos][1]
+        except FileNotFoundError:
+            print("You didn't give the right ColorSetting FilePath")
+            sleep(0.1)
+            raise
 
         return colorSettings
 
@@ -67,6 +81,18 @@ class unicodeColorGenerator:
         charColor = color[1]
 
         return backgroundColor, charColor
+
+    def toTensorConversion(self,img):
+        transformer = transforms.ToTensor()
+        return transformer(img)
+
+    def toTensorAndJitterConversion(self,img,brightness, contrast, saturation, hue):
+        transformer = transforms.Compose([
+            transforms.ColorJitter(brightness,contrast,saturation,hue),
+            transforms.ToTensor(),
+        ])
+
+        return transformer(img)
 
 
     #desc: creates a generator for a specific font-size-padding combination that

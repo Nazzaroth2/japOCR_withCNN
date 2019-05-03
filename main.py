@@ -7,7 +7,9 @@ desc: main file for the project. starts up the program
 
 from lib import imageInputLib as imgLib
 
+
+
 tensor = imgLib.convertRawToTensor()
 
-print(tensor.size())
+print(tensor[:100])
 

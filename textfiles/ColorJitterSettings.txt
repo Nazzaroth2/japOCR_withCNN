@@ -1,0 +1,16 @@
+For Black on White-B.:
+Brightness: 0.1-0.9
+Contrast: 0.1-0.8
+
+
+For White on Black-B:
+Brightness: 0.2-0.9
+Contrast: 0.1-0.7
+
+
+
+Saturation only usefull when working with colors not black-white (e.g. red on black would work too)
+
+Hue is very usefull when working with color. I will only need maybe 3 base colorSettings and
+with hue jitter i can get infinite colorcombinations for training.
+Hue also doesnt work when its black-white or white-black

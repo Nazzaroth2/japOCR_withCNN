@@ -63,10 +63,11 @@ class unicodeColorGenerator:
         return ImageFont.truetype(font, size, encoding="unic")
 
     #desc: setup the canvas to draw the char
-    def __canvasSetup(self, fontObj, char, padding,backgroundColor):
-        text_w, text_h = fontObj.getsize(char)
+    def __canvasSetup(self, fontObj, char, size,backgroundColor):
+        # text_w, text_h = fontObj.getsize(char)
 
-        canvas = Image.new('RGB', (text_w + padding, text_h + padding), backgroundColor)
+
+        canvas = Image.new('RGB', (size, size), backgroundColor)
 
         return canvas
 
@@ -97,19 +98,19 @@ class unicodeColorGenerator:
 
     #desc: creates a generator for a specific font-size-padding combination that
     #returns PIL-Images for every color-Character Combination
-    def draw(self, font, size, padding):
+    def draw(self, font, size):
 
         fontObj = self.__createFontObj(font, size)
 
         for color in self.colorSettings:
             backgroundColor, charColor = self.__colorUnpacker(color)
 
-            for unicode in self.unicodeList:
-                unicode = self.__fileToUnicode(unicode)
+            for unicodeRaw in self.unicodeList:
+                unicodeChar = self.__fileToUnicode(unicodeRaw)
 
-                canvas = self.__canvasSetup(fontObj, unicode, padding, backgroundColor)
+                canvas = self.__canvasSetup(fontObj, unicodeChar, size, backgroundColor)
 
                 drawObj = ImageDraw.Draw(canvas)
-                drawObj.text((0, 0), unicode, charColor, fontObj)
+                drawObj.text((0, 0), unicodeChar, charColor, fontObj)
 
-                yield canvas
+                yield canvas, unicodeRaw

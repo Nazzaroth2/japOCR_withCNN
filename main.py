@@ -9,7 +9,5 @@ from lib import imageInputLib as imgLib
 
 
 
-tensor = imgLib.convertRawToTensor()
 
-print(tensor[:100])
 

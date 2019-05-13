@@ -16,7 +16,7 @@ import torch
 from time import time
 import os
 
-from lib import trainingLib as trainLib
+from lib import trainingEvaluationLib as trainLib
 from lib import model
 
 startTime = time()
@@ -29,7 +29,7 @@ filepathUnicode = 'trainingData\\kanjiUnicodeList\\unicodeList.csv'
 font = "togalite-regular.otf"
 
 batchLength = 2121
-epoch = 1000
+epoch = 100
 LEARNING_RATE = 0.001
 
 
@@ -89,23 +89,45 @@ for pos,i in enumerate(output):
     else:
         pass
 
-errorSum = sum(errors)
-errorPercent = errorSum / (batchLength / 100)
-
-print("End sum error is: {} and percentage is: {}".format(errorSum,format(errorPercent,".3f")))
-print("We took {} seconds to train, that is {} mins.".format(format(endTime,".3f"),
-                                                             format(endTime/60,".3f")))
-
-#saving Weights
-savePath = "trainedNets\\analizerCNN_Adam_Cross_001.pt"
-try:
-    torch.save(AnalizerCNN.state_dict(),savePath)
-except:
-    print("Save was not succesfull.")
-else:
-    print("Save was succesfull.")
+limit = []
+for i in output:
+    limit.append(torch.max(i).item())
 
 
 
+for i in range(5):
+    print(output[i])
+    print()
+    print(limit[i])
+    print()
+    print()
+
+
+
+
+
+
+
+
+# errorSum = sum(errors)
+# errorPercent = errorSum / (batchLength / 100)
+#
+#
+#
+# print("End sum error is: {} and percentage is: {}".format(errorSum,format(errorPercent,".3f")))
+# print("We took {} seconds to train, that is {} mins.".format(format(endTime,".3f"),
+#                                                              format(endTime/60,".3f")))
+#
+# #saving Weights
+# savePath = "trainedNets\\analizerCNN_Adam_Cross_001.pt"
+# try:
+#     torch.save(AnalizerCNN.state_dict(),savePath)
+# except:
+#     print("Save was not succesfull.")
+# else:
+#     print("Save was succesfull.")
+#
+#
+#
 
 

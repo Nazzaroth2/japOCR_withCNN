@@ -1,43 +1,80 @@
-from PIL import Image, ImageDraw, ImageFont
 from lib import trainDataGenerationLib as dataLib
-from torchvision.transforms import ColorJitter
+from lib import trainingEvaluationLib as evalLib
+from torchvision.transforms import ColorJitter, ToPILImage
 import random
+from time import time
+from itertools import islice
 import torch
-import torch.nn as nn
+import torchvision
+import os
 
 
-
-# filepathColor = 'trainingData\\kanjiUnicodeList\\colorSetting.csv'
-# filepathUnicode = 'trainingData\\kanjiUnicodeList\\unicodeList.csv'
+# if __name__ == '__main__':
+#     startTime = time()
 #
-# dataGeneratorObj = dataLib.unicodeColorGenerator(filepathUnicode,filepathColor)
+#     filepathColor = 'trainingData\\kanjiUnicodeList\\colorSetting.csv'
+#     filepathUnicode = 'trainingData\\kanjiUnicodeList\\unicodeList.csv'
+#     fonts = ["togalite-regular.otf",]
+#     batchLength = 128
 #
-# dataGenerator = dataGeneratorObj.draw("togalite-regular.otf", 50, 0)
+#     # randomSettings = [[0,0,0,0],[(0.1,0.8),0,0,0],[0,(0.1,0.8),0,0],[0,0,(0.1,0.8),0],[0,0,0,(-0.5,0.5)]]
 #
-# Transformer = ColorJitter(0,0,0,(0.0,0.5))
 #
-# imgList = []
-# for i in range(3000):
-#     imgList.append(dataGeneratorObj.toTensorAndJitterConversion(next(dataGenerator),(0.1,0.8),0,0,0))
+#     transformer = torchvision.transforms.Compose([
+#         # torchvision.transforms.RandomAffine((-20,20))
+#         torchvision.transforms.RandomAffine(0,translate=(0.1,0.1))
+#     ])
 #
-# for i in range(5):
-#     randInt = random.randint(500,1000)
-#     imgList[randInt].show()
-
-
-loss = nn.CrossEntropyLoss()
-input = torch.randn(3, 5, requires_grad=True)
-target = torch.empty(3, dtype=torch.long).random_(5)
-output = loss(input, target)
-
-print(input)
-print()
-print(target)
-print()
-print(output)
+#     trainingSet = torchvision.datasets.ImageFolder("testDataRoot",transformer)
+#     print(len(trainingSet))
+#     # for i in range(5):
+#     #     randNum = random.randrange(0,4000)
+#     #     trainingSet[randNum][0].show()
 
 
 
 
 
 
+
+
+    # trainLoader = torch.utils.data.DataLoader(trainingSet, batchLength, shuffle=True, num_workers=5)
+
+    # #trainingLoop
+    # for i, data in enumerate(trainLoader,0):
+    #     inputs, lables = data
+    #
+    #     for img in inputs:
+    #         img.show()
+
+
+
+    # endTime = time() - startTime
+    #
+    #
+    # print("We took {} seconds to train, that is {} mins.".format(format(endTime,".3f"),
+    #                                                              format(endTime/60,".3f")))
+
+
+
+
+
+
+
+
+
+
+#make trainPics and save them on disk
+filepathColor = 'trainingData\\kanjiUnicodeList\\colorSetting02.csv'
+filepathUnicode = 'trainingData\\kanjiUnicodeList\\unicodeList.csv'
+#to find windows fonts filenames go to:
+#registry->local_machine_software_microsoft_windowsNT_CurrentVersion_Fonts
+fonts = ["GenShinGothic-Normal.ttf","K Gothic.ttf","komorebi-gothic.ttf",
+         "NanigoSquare-Regular.ttf","OtsutomeFont_Ver3.ttf","Ronde-B_square.otf","Snap_P_ver1.otf",
+         "YuGothR.ttc","yumin.ttf","togalite-regular.otf","UDDigiKyokashoN-R.ttc",
+         "msgothic.ttc","msmincho.ttc","851MkPOP_1.ttf","Zomzi.TTF","Caramel_condenced_Ver1.00.otf",
+
+         ]
+rootPath = os.path.join('trainingData','trainPics05')
+for img,classValue in evalLib.makeMiniBatch(filepathUnicode, filepathColor, fonts, 25):
+    evalLib.savePics(rootPath,img,classValue)

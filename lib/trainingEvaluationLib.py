@@ -9,73 +9,77 @@ from lib import trainDataGenerationLib as genLib
 from torch import unsqueeze,cat
 from PIL import Image
 from torchvision.transforms import ToTensor
-import torch
+import csv
+import os
 
 
-# #desc: encode unicodeChars into onehot representation
-# def unicodeOneHot(unicodeChar, unicodeList):
-#     oneHotList = [0] * 2120
-#
-#     position = unicodeList.index(unicodeChar)
-#
-#     oneHotList.insert(position, 1)
-#
-#     return oneHotList
+#desc: deals with creating pic list for saving
+def makeMiniBatch(filepathUnicode, filepathColor,fonts,size):
+
+    for font in fonts:
+        trainGenObj = genLib.unicodeColorGenerator(filepathUnicode, filepathColor)
+        trainGen = trainGenObj.draw(font, size)
+
+        #loop through all generator values
+        for trainImg, unicodeChar in trainGen:
+
+            classValue = trainGenObj.unicodeList.index(unicodeChar)
+
+            yield trainImg, classValue
 
 
-#desc: deals with creating a MiniBatch for training
-def makeMiniBatch(filepathUnicode, filepathColor,font,size,batchLength):
-    #create generator with specific font and size
-    trainGenObj = genLib.unicodeColorGenerator(filepathUnicode, filepathColor)
-    trainGen = trainGenObj.draw(font, size)
-
-    answerBatch = []
-
-    #initialize both Batches with 1 value each
-    trainImg, unicodeChar = next(trainGen)
-    imgBatch = unsqueeze(trainGenObj.toTensorConversion(trainImg), 0)
-    #append the position index of used unicodeChar
-    answerBatch.append(trainGenObj.unicodeList.index(unicodeChar))
-
-    #add batchLength-1 amount of values to each batch
-    for i in range(batchLength-1):
-        trainImg, unicodeChar = next(trainGen)
-
-        imgT = trainGenObj.toTensorConversion(trainImg)
-        imgT = unsqueeze(imgT, 0)
-        #cat combines Tensors in 0-dim [0[1[2[3]]]]
-        imgBatch = cat((imgBatch, imgT), 0)
-
-        answerBatch.append(trainGenObj.unicodeList.index(unicodeChar))
-
-    answerTensor = torch.LongTensor(answerBatch)
+#saves a single training pic
+def savePics(rootPath,pic,classValue,counter=0):
+    classPath = os.path.join(rootPath,str(classValue))
+    try:
+        os.makedirs(classPath)
+    except OSError:
+        pass
 
 
-    return imgBatch, answerTensor
+    filePath = os.path.join(rootPath, str(classValue), "pic"+str(counter)+".bmp")
+    while(os.path.isfile(filePath)):
+        counter += 1
+        filePath = os.path.join(rootPath, str(classValue), "pic"+str(counter)+".bmp")
+
+    try:
+        pic.save(filePath)
+    except Exception as e:
+        print("File",filePath,"could not be saved.")
+        print(e)
 
 
 
 
 
+#TODO
+#combine these functions with torchvison.dataset.ImageFolder
+#to have a testset creator(on hold cause i have to sort crops by hand right now)
+#desc: cuts big img into given size with a given step
 def windowCrop(filePath,height,width,heightStep=3,widthStep=3):
     im = Image.open(filePath)
     imgwidth, imgheight = im.size
-    for i in range(0,imgheight,heightStep):
-        for j in range(0,imgwidth,widthStep):
+    for i in range(0,(imgheight-height),heightStep):
+        for j in range(0,(imgwidth-width),widthStep):
             box = (j, i, j+width, i+height)
             yield im.crop(box)
 
-def makeEvalutionBatch(generator):
-    Transformer = ToTensor()
 
-    piece = next(generator)
-    pieceBatch = unsqueeze(Transformer(piece),0)
+#desc: Transforms the target to actuall kanji classes for pic "Combo1_24bit.bmp"
+def testTargetTransform(orgTarget):
+    transFormDict = {0:5,1:11,2:22,3:28,4:30,5:42,6:45,
+                     7:65,8:76,9:82,10:175,11:217,12:361,13:594,
+                     14:612,15:798,16:825,17:1332,18:1393}
 
-    for num,piece in enumerate(generator):
-        pieceT = Transformer(piece)
+    return transFormDict[orgTarget]
 
-        pieceT = unsqueeze(pieceT, 0)
+#desc: Transforms the target to actuall kanji classes for pic "Combo1_24bit.bmp"
+def testTargetTransformBonW(orgTarget):
+    transFormDict = {0:34,1:37,2:42,3:47,4:71,5:72,6:74,
+                     7:75,8:183,9:186,10:254,11:379,12:482,13:785,
+                     14:1351,15:1751}
 
-        pieceBatch = cat((pieceBatch,pieceT),0)
+    return transFormDict[orgTarget]
 
-    return pieceBatch
+
+

@@ -1,0 +1,10 @@
+*.bmp
+*.pt
+*.pyc
+trainingData
+codeSpeedStatistics
+testData
+testDataRoot
+textfiles
+trainDataRoot
+trainedNets

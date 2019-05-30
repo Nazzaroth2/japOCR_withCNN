@@ -1,133 +1,159 @@
 """
 author: Viktor Cerny
 created: 04-05-19
-last edit: 06-05-19
+last edit: 24-05-19
 desc: everything that has to do with training and trainingloop, but cant
 be put in external lib
 """
 
-# from lib import imageInputLib as imgLib
-# from lib import trainDataGenerationLib as genLib
+if __name__ == '__main__':
 
-import torch.optim as optim
-import torch.nn as nn
-import torch
+    import torch.optim as optim
+    import torch.nn as nn
+    import torch
+    import torchvision
 
-from time import time
-import os
+    from time import time,sleep
+    import os
 
-from lib import trainingEvaluationLib as trainLib
-from lib import model
-
-startTime = time()
+    from lib import model
+    import evaluation
 
 
-#HYPERPARAMETER / FilePaths
-loadPath = "trainedNets\\analizerCNN_Adam_Cross_001.pt"
-filepathColor = 'trainingData\\kanjiUnicodeList\\colorSetting.csv'
-filepathUnicode = 'trainingData\\kanjiUnicodeList\\unicodeList.csv'
-font = "togalite-regular.otf"
-
-batchLength = 2121
-epoch = 100
-LEARNING_RATE = 0.001
+    startTime = time()
 
 
-#standard training objects creation
-AnalizerCNN = model.AnalizerCNN(batchLength)
-optimizer = optim.Adam(AnalizerCNN.parameters(),lr=LEARNING_RATE)
-lossFunction = nn.CrossEntropyLoss()
-
-#load trained Net if trained Net exists
-if os.path.isfile(loadPath):
-    AnalizerCNN.load_state_dict(torch.load(loadPath))
-else:
-    pass
+    #HYPERPARAMETER / FilePaths
+    weightPath = os.path.join("trainedNets","analizerCNNv0.4.5_Adam_Cross_001.pt")
+    trainDataPath = "trainDataRoot"
+    testDataPath = "testDataRoot"
+    batchSize = 606
+    epochs = 41
+    LEARNING_RATE = 0.001
 
 
+    #standard training objects creation
+    AnalizerCNN = model.AnalizerCNN(batchSize)
+    optimizer = optim.Adam(AnalizerCNN.parameters(),lr=LEARNING_RATE)
+    lossFunction = nn.CrossEntropyLoss()
 
-imgBatch, answerBatch = trainLib.makeMiniBatch(filepathUnicode,filepathColor,font,16,batchLength)
-
-#gpu training
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-AnalizerCNN.to(device)
-imgBatch = imgBatch.to(device)
-answerBatch = answerBatch.to(device)
-
-
-
-#trainingsLoop
-for i in range(epoch):
-
-    output = AnalizerCNN(imgBatch)
-
-    optimizer.zero_grad()
-
-    loss = lossFunction(output,answerBatch)
-
-    loss.backward()
-
-    optimizer.step()
-
-    if i % 500 == 0:
-        print("Epoch:", i)
-        print(loss.item())
-        print()
-
-
-endTime = time() - startTime
-
-
-#eval
-output = AnalizerCNN(imgBatch)
-errors = []
+    #original data transformer
+    transformerOrg = torchvision.transforms.ToTensor()
+    #single data change transformers
+    transformerBright = torchvision.transforms.Compose([
+        torchvision.transforms.ColorJitter((0.1,0.8),0,0,0),
+        torchvision.transforms.ToTensor()
+    ])
+    transformerCont = torchvision.transforms.Compose([
+        torchvision.transforms.ColorJitter(0,(0.1,0.8),0,0),
+        torchvision.transforms.ToTensor()
+    ])
+    transformerSat = torchvision.transforms.Compose([
+        torchvision.transforms.ColorJitter(0,0,(0.1,0.8),0),
+        torchvision.transforms.ToTensor()
+    ])
+    transformerHue = torchvision.transforms.Compose([
+        torchvision.transforms.ColorJitter(0, 0, 0,(-0.5,0.5)),
+        torchvision.transforms.ToTensor()
+    ])
+    transformerTrans = torchvision.transforms.Compose([
+        torchvision.transforms.RandomAffine(0,translate=(0.1,0.1)),
+        torchvision.transforms.ToTensor()
+    ])
+    transformerCombo = torchvision.transforms.Compose([
+        torchvision.transforms.ColorJitter((0.1,0.8),(0.1,0.8),(0.1,0.8),(-0.5,0.5)),
+        torchvision.transforms.RandomAffine(0,translate=(0.1,0.1)),
+        torchvision.transforms.ToTensor()
+    ])
 
 
-for pos,i in enumerate(output):
-    if (i == torch.max(i)).nonzero().item() != answerBatch[pos].item():
-        errors.append(1)
+    #load trained Net if trained Net exists
+    if os.path.isfile(weightPath):
+        AnalizerCNN.load_state_dict(torch.load(weightPath))
+        print("pretrained Net-weights were loaded\n")
     else:
         pass
 
-limit = []
-for i in output:
-    limit.append(torch.max(i).item())
+
+    #gpu training
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    AnalizerCNN.to(device)
 
 
+    #trainingLoop
+    for epoch in range(epochs):
+        #having a diffrent type of trainingSet per every settingAmount epochs
+        #thus hopefully having better generalisation (overall more trainingsdata)
+        settingAmount = 1
 
-for i in range(5):
-    print(output[i])
+        if epoch % settingAmount == 0:
+            trainingSet = torchvision.datasets.ImageFolder("trainDataRoot", transformerOrg)
+            # print("training original")
+        # elif epoch % settingAmount == 1:
+        #     trainingSet = torchvision.datasets.ImageFolder(trainDataPath, transformerBright)
+        #     print("training bright")
+        # elif epoch % settingAmount == 2:
+        #     trainingSet = torchvision.datasets.ImageFolder(trainDataPath, transformerCont)
+        #     print("training contrast")
+        # elif epoch % settingAmount == 3:
+        #     trainingSet = torchvision.datasets.ImageFolder(trainDataPath, transformerSat)
+        #     print("training saturation")
+        # elif epoch % settingAmount == 4:
+        #     trainingSet = torchvision.datasets.ImageFolder(trainDataPath, transformerHue)
+        #     print("training hue")
+        # if epoch % settingAmount == 0:
+        #     trainingSet = torchvision.datasets.ImageFolder(trainDataPath, transformerTrans)
+            # print("training translation")
+        # elif epoch % settingAmount == 1:
+        #     trainingSet = torchvision.datasets.ImageFolder(trainDataPath, transformerCombo)
+        #     print("training Combo")
+
+        #upgraded ram :3 now we can go 5+ workers
+        trainLoader = torch.utils.data.DataLoader(trainingSet, batchSize, shuffle=True, num_workers=7)
+
+        #batchLoop
+        for batchNum, data in enumerate(trainLoader,0):
+            inputImages, classValues = data
+            inputImages, classValues = inputImages.to(device), classValues.to(device)
+
+            optimizer.zero_grad()
+            output = AnalizerCNN(inputImages)
+            loss = lossFunction(output,classValues)
+            loss.backward()
+            optimizer.step()
+
+            # if batchNum % 100 == 0:
+            #     print("Training Batch {}".format(batchNum))
+
+
+        if epoch % 1 == 0:
+            print("The Loss for Epoch {} is: {}".format(epoch,format(loss.item(),".5f")))
+
+
+    endTime = time() - startTime
+    print("We took {} seconds to train, that is {} mins.".format(format(endTime,".3f"),
+                                                                 format(endTime/60,".3f")))
+
+
+    #saving Weights
+    try:
+        torch.save(AnalizerCNN.state_dict(),weightPath)
+    except:
+        print("Save was not succesfull.")
+    else:
+        print("Save was succesfull.")
+
+    sleep(1)
+
     print()
-    print(limit[i])
-    print()
-    print()
+    print("Now we are evaluating.")
+
+    evaluation.evaluation(weightPath,testDataPath)
 
 
 
 
 
 
-
-
-# errorSum = sum(errors)
-# errorPercent = errorSum / (batchLength / 100)
-#
-#
-#
-# print("End sum error is: {} and percentage is: {}".format(errorSum,format(errorPercent,".3f")))
-# print("We took {} seconds to train, that is {} mins.".format(format(endTime,".3f"),
-#                                                              format(endTime/60,".3f")))
-#
-# #saving Weights
-# savePath = "trainedNets\\analizerCNN_Adam_Cross_001.pt"
-# try:
-#     torch.save(AnalizerCNN.state_dict(),savePath)
-# except:
-#     print("Save was not succesfull.")
-# else:
-#     print("Save was succesfull.")
-#
-#
-#
 
 

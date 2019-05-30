@@ -6,33 +6,140 @@ desc: the evaluation loop over a testimage. looping over the image
 from the outside.
 """
 
-
 from lib import trainingEvaluationLib as trainLib
 from lib import model
 import os
 import torch
+import torchvision
 
-filepath = "trainingData\\Combo1_24bit.bmp"
-height = width = 16
+def evaluation(netPath,rootPath):
+    Transformer = torchvision.transforms.ToTensor()
+    batchLength = 1
 
-evalBatch = trainLib.makeEvalutionBatch(trainLib.windowCrop(filepath,height,width))
+    # testTrainingset
+    testSet = torchvision.datasets.ImageFolder(rootPath, Transformer, trainLib.testTargetTransformBonW)
+    testLoader = torch.utils.data.DataLoader(testSet, batchLength, shuffle=True, num_workers=5)
 
-loadPath = "trainedNets\\analizerCNN_Adam_Cross_001.pt"
-batchLength = len(evalBatch)
+    # pretrained net
+    loadPath = netPath
 
-#standard training objects creation
-AnalizerCNN = model.AnalizerCNN(batchLength)
+    # standard training objects creation
+    AnalizerCNN = model.AnalizerCNNEval(batchLength)
 
-#load trained Net if trained Net exists
-if os.path.isfile(loadPath):
-    AnalizerCNN.load_state_dict(torch.load(loadPath))
-else:
-    pass
+    # load trained Net if trained Net exists
+    if os.path.isfile(loadPath):
+        AnalizerCNN.load_state_dict(torch.load(loadPath))
+    else:
+        raise FileNotFoundError('could not load pretrained net')
 
-analizedList = AnalizerCNN(evalBatch)
+    errorGuess = []
+    rightGuess = []
+    errorSum = 0
+    for data in testLoader:
+        inputImages, classValues = data
+
+        output = AnalizerCNN(inputImages)
+
+        for pos, guess in enumerate(output):
+            guessClass = (guess == torch.max(guess)).nonzero().item()
+            if guessClass != classValues[pos].item():
+                errorGuess.append((guessClass, classValues[pos].item()))
+                errorSum += 1
+            else:
+                errorGuess.append(0)
+                rightGuess.append((guessClass, classValues[pos].item()))
+
+    print("The test showed:")
+    print("The Net had {} false guesses.".format(errorSum))
+    print("That is {} percent of the whole testSet".format((errorSum / len(testSet)) * 100))
+    print("The wrongly guesses Images are at these positions:")
+    print(errorGuess)
+    print("The rightly guesses Images are at these positions:")
+    print(rightGuess)
 
 
-for i in range(5):
-    print((analizedList[i] == torch.max(analizedList[i])).nonzero().item())
-    print(torch.max(analizedList[i]).item())
+
+
+if __name__ == '__main__':
+    from lib import trainingEvaluationLib as trainLib
+    from lib import model
+    import os
+    import torch
+    import torchvision
+
+    rootPath = "testDataRootBonW"
+    Transformer = torchvision.transforms.ToTensor()
+    batchLength = 1
+
+    #testTrainingset
+    testSet = torchvision.datasets.ImageFolder(rootPath,Transformer,trainLib.testTargetTransformBonW)
+    testLoader = torch.utils.data.DataLoader(testSet,batchLength,shuffle=True, num_workers=5)
+
+
+
+    #pretrained net
+    loadPath = os.path.join("trainedNets","analizerCNNv0.3.4_Adam_Cross_006.pt")
+
+    #standard training objects creation
+    AnalizerCNN = model.AnalizerCNNEval(batchLength)
+
+    #load trained Net if trained Net exists
+    if os.path.isfile(loadPath):
+        AnalizerCNN.load_state_dict(torch.load(loadPath))
+    else:
+        raise FileNotFoundError('could not load pretrained net')
+
+
+    errorPos = []
+    errorSum = 0
+    for data in testLoader:
+        inputImages, classValues = data
+
+        output = AnalizerCNN(inputImages)
+
+        for pos,guess in enumerate(output):
+            guessClass = (guess == torch.max(guess)).nonzero().item()
+            if guessClass != classValues[pos].item():
+                errorPos.append((guessClass,classValues[pos].item()))
+                errorSum += 1
+            else:
+                errorPos.append(0)
+
+
+    print("The test showed:")
+    print("The Net had {} false guesses.".format(errorSum))
+    print("That is {} percent of the whole testSet".format((errorSum/37)*100))
+    print("The wrongly guesses Images are at these positions:")
+    print(errorPos)
+
+
+
+
+
+
+
+
+
+# #cutting testpic into crops
+# from lib import trainingEvaluationLib as trainLib
+# filepath = "trainingData\\LN_BonW_Text_Line2_24bit.bmp"
+# height = width = 16
+#
+# #make/save evalPics
+# for img in trainLib.windowCrop(filepath,height,width):
+#     trainLib.savePics("testDataRootBonW_FULL",img,-1)
+
+
+    # for i in range(5):
+    #     index = (analizedList[i] == torch.max(analizedList[i])).nonzero().item()
+    #     indexValue = torch.max(analizedList[i]).item()
+    #     indexUnicode = unicodeList[index]
+    #     unicodeChar = chr(int(indexUnicode,16))
+    #     print("The ",str(i),"piece is guessed as:")
+    #     print(index)
+    #     print(indexValue)
+    #     print(indexUnicode)
+    #     print(unicodeChar)
+    #     print()
+
 

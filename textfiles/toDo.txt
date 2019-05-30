@@ -20,8 +20,9 @@ sind nicht vorhanden und werden als nur weißer Hintergrund gezeichnet.
 
 Model geschrieben und trainiert!
 Evaluationsablauf geschrieben!
+Evaluationsergebnisse besser aufbereiten(Indexangabe in Unicodezeichen umwandeln) ERLEDIGT!
 
-Evaluationsergebnisse besser aufbereiten(Indexangabe in Unicodezeichen umwandeln)
+
 Model mit Translationen, Farbveränderungen, ver. ColorSettings, ver. Inputgrößen trainieren.
 
 

@@ -24,18 +24,22 @@ if __name__ == '__main__':
 
 
     #HYPERPARAMETER / FilePaths
-    weightPath = os.path.join("trainedNets","analizerCNNv0.4.5_Adam_Cross_001.pt")
+    weightPath = os.path.join("trainedNets","analizerCNN_ResNeXt_v0.5.0_Adam_Cross_004.pt")
+    weightPathBackup = os.path.join("trainedNets", "analizerCNN_ResNeXt_v0.5.0_Adam_Cross_004_15_5.pt")
     trainDataPath = "trainDataRoot"
     testDataPath = "testDataRoot"
-    batchSize = 606
-    epochs = 41
-    LEARNING_RATE = 0.001
+    batchSize = 126
+    epochs = 151
+    LEARNING_RATE = 0.5
+    logEpoch = []
 
 
     #standard training objects creation
-    AnalizerCNN = model.AnalizerCNN(batchSize)
-    optimizer = optim.Adam(AnalizerCNN.parameters(),lr=LEARNING_RATE)
+    AnalizerCNN = model.AnalizerCNN(8,11,2121,64,4)
+    # AnalizerCNN = model.AnalizerCNN(batchSize)
+    optimizer = optim.SGD(AnalizerCNN.parameters(),lr=LEARNING_RATE)
     lossFunction = nn.CrossEntropyLoss()
+
 
     #original data transformer
     transformerOrg = torchvision.transforms.ToTensor()
@@ -81,7 +85,7 @@ if __name__ == '__main__':
 
 
     #trainingLoop
-    for epoch in range(epochs):
+    for epoch in range(1,epochs):
         #having a diffrent type of trainingSet per every settingAmount epochs
         #thus hopefully having better generalisation (overall more trainingsdata)
         settingAmount = 1
@@ -109,7 +113,8 @@ if __name__ == '__main__':
         #     print("training Combo")
 
         #upgraded ram :3 now we can go 5+ workers
-        trainLoader = torch.utils.data.DataLoader(trainingSet, batchSize, shuffle=True, num_workers=7)
+        trainLoader = torch.utils.data.DataLoader(trainingSet, batchSize, shuffle=True, num_workers=5,
+                                                  pin_memory=True)
 
         #batchLoop
         for batchNum, data in enumerate(trainLoader,0):
@@ -126,8 +131,10 @@ if __name__ == '__main__':
             #     print("Training Batch {}".format(batchNum))
 
 
-        if epoch % 1 == 0:
-            print("The Loss for Epoch {} is: {}".format(epoch,format(loss.item(),".5f")))
+        if epoch % 5 == 0 or epoch == 1:
+            print("The Loss for Epoch {} is: {}".format(epoch,format(loss.item(),".6f")))
+            logEpoch.append((epoch,loss.item()))
+
 
 
     endTime = time() - startTime
@@ -138,6 +145,9 @@ if __name__ == '__main__':
     #saving Weights
     try:
         torch.save(AnalizerCNN.state_dict(),weightPath)
+        torch.save(AnalizerCNN.state_dict(), weightPathBackup)
+        with open("logfileTraining.txt","w",encoding="utf-8") as f:
+            f.write(str(logEpoch))
     except:
         print("Save was not succesfull.")
     else:
@@ -145,6 +155,9 @@ if __name__ == '__main__':
 
     sleep(1)
 
+
+
+    #evaluation
     print()
     print("Now we are evaluating.")
 
